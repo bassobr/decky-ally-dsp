@@ -1,0 +1,13 @@
+{
+  "_comment": "Pinned fallback if the ASUS support API is unreachable. Update url and sha256 together.",
+  "asus_api": "https://www.asus.com/support/webapi/ProductV2/GetPDDrivers?website=us&model=rog+xbox+ally+x+%EF%BC%882025%EF%BC%89+rc73xa&pdhashedid=&osid=52",
+  "asus_cdn": "https://dlcdnets.asus.com",
+  "package": {
+    "title": "Dolby Atmos driver",
+    "version": "V11.130.1340.46",
+    "release_date": "2026/02/25",
+    "url": "https://dlcdnets.asus.com/pub/ASUS/IOTHMD/Image/Software/SoftwareandUtility/17507/DolbyAtmosdriverforConsumer_ASUS_Z_V11.130.1340.46_17507.exe",
+    "sha256": "f68bb32658ddbf6970a7ab338c22e94dcff46b69ef0709249748013326bb4778",
+    "size": 10827184
+  }
+}

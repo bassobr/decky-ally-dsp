@@ -1,4 +1,4 @@
-"""Logger that uses decky.logger inside Decky and stdlib logging in the CLI."""
+"""decky.logger inside Decky, stdlib logging in the CLI."""
 from __future__ import annotations
 
 import logging

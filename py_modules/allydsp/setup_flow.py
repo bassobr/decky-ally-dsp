@@ -1,5 +1,4 @@
-"""The setup wizard's backend: hardware check, package resolution, download,
-extraction, venv, conversion, activation. Shared by main.py and the CLI."""
+"""Setup steps: hardware check, package lookup, download, extraction, venv, conversion, activation."""
 from __future__ import annotations
 
 import os

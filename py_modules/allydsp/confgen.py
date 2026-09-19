@@ -1,6 +1,5 @@
-"""Turn the converter's pipewire.conf.d drop-in into a standalone configuration
-for our own `pipewire -c` process and rewrite names, paths and the smart-filter
-target so the chain is stable across presets."""
+"""Rewrite the converter's pipewire.conf.d drop-in into a standalone config for
+the plugin's own `pipewire -c` process with fixed node names and target."""
 from __future__ import annotations
 
 import re
@@ -114,8 +113,7 @@ def limiter_input_gain(conf_text: str) -> Optional[float]:
 
 
 def set_pregain_db(conf_text: str, db: float, base_gain: Optional[float] = None) -> Tuple[str, bool]:
-    """Scale the limiter's input gain by `db`. `base_gain` is the converter's
-    original value (kept in preset meta) so repeated applications don't stack."""
+    """Scale the limiter input gain by `db` relative to `base_gain` (the converter's value)."""
     m = _LIMITER_NAME.search(conf_text)
     if not m:
         return conf_text, False

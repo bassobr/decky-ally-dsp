@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Developer loop: build, assemble, copy to the handheld and restart Decky Loader.
-# Usage: scripts/dev-deploy.sh deck@10.10.10.21   (needs key auth and passwordless sudo)
+# Build, assemble, copy to the handheld and restart Decky Loader.
+# Usage: scripts/dev-deploy.sh deck@<host>   (key auth and passwordless sudo required)
 set -euo pipefail
 HOST="${1:?usage: dev-deploy.sh user@host}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"

@@ -1,5 +1,5 @@
-"""Run the MIT-licensed converter (speaker-tuning-to-easyeffects) in a private
-venv and turn each Dolby profile/voicing into a preset directory."""
+"""Run speaker-tuning-to-easyeffects in a private venv and write one preset
+directory per Dolby profile and voicing."""
 from __future__ import annotations
 
 import os
@@ -188,9 +188,12 @@ def convert_all(xml: str, target_sink: str, extras: Dict[str, Any], progress: Pr
         try:
             convert_one(xml, p, v, target_sink, extras, xml_sha, allow_vb)
             results[f"{p}/{v}"] = "ok"
-        except Exception as e:  # keep going, report per preset
+        except Exception as e:
             logger.error(f"convert {p}/{v}: {e}")
             results[f"{p}/{v}"] = f"error: {e}"
+    for name in os.listdir(paths.PRESETS_DIR) if os.path.isdir(paths.PRESETS_DIR) else []:
+        if name not in PROFILE_IDS:
+            shutil.rmtree(os.path.join(paths.PRESETS_DIR, name), ignore_errors=True)
     if progress:
         progress(100.0, "done")
     return results

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Fetch the LSP Plugins LV2 build that SteamOS mirrors from Arch Linux, verify its
-# checksum and place only the three plugins Ally DSP needs into bin/lv2/.
-# Usage: scripts/fetch-lsp.sh [dest_dir]   (default: ./bin/lv2)
+# Fetch lsp-plugins-lv2 from the SteamOS mirror, verify it and copy the plugins
+# Ally DSP uses into bin/lv2/. Usage: scripts/fetch-lsp.sh [dest_dir]
 set -euo pipefail
 PKG_URL="${LSP_PKG_URL:-https://steamdeck-packages.steamos.cloud/archlinux-mirror/extra-3.8/os/x86_64/lsp-plugins-lv2-1.2.22-1-x86_64.pkg.tar.zst}"
 PKG_SHA256="${LSP_PKG_SHA256:-49b37861d815241b1f08c44c8dab80cfceb389865ae5c9eaec453056743c5676}"
@@ -28,7 +27,7 @@ python3 "$ROOT/scripts/trim-lv2-manifest.py" "$SRC/manifest.ttl" "$OUT/manifest.
 cp "$ROOT/third_party/licenses/LGPL-3.0.txt" "$OUT/LICENSE.LGPL-3.0.txt"
 cat > "$OUT/NOTICE.txt" <<NOTICE
 LSP Plugins (https://lsp-plug.in), LGPL-3.0-or-later. Unmodified binary from the
-Arch Linux package lsp-plugins-lv2 1.2.22 ($PKG_URL). Only the five plugin
-descriptions Ally DSP uses are shipped; the full source is at https://github.com/lsp-plugins/lsp-plugins.
+Arch Linux package lsp-plugins-lv2 1.2.22 ($PKG_URL); only the plugin descriptions
+Ally DSP uses are included. Source: https://github.com/lsp-plugins/lsp-plugins
 NOTICE
 du -sh "$OUT" | cut -f1; ls "$OUT"

@@ -9,7 +9,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
-# secrets and local-only data (proprietary tuning, keys, test artefacts)
+# local-only data: proprietary tuning, signing seed, test artefacts
 local/
 *.secret
 # editors / os
@@ -17,3 +17,4 @@ local/
 .idea/
 .DS_Store
 *.log
+.cache/

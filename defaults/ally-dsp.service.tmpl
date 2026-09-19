@@ -1,6 +1,5 @@
-# Ally DSP: runs the speaker filter chain in its own PipeWire process, the same
-# pattern Valve uses for filter-chain.service. Installed by the plugin into
-# ~/.config/systemd/user/ally-dsp.service; paths are filled in at install time.
+# Ally DSP filter chain in its own PipeWire process. Installed to
+# ~/.config/systemd/user/ally-dsp.service with paths filled in by the plugin.
 [Unit]
 Description=Ally DSP speaker filter chain (Dolby tuning for the ROG Xbox Ally X)
 After=pipewire.service wireplumber.service

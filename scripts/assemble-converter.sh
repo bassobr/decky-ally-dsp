@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy the parts of the converter submodule the plugin needs into defaults/converter/.
+# Copy the converter files the plugin needs from the submodule into defaults/converter/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/third_party/speaker-tuning-to-easyeffects"

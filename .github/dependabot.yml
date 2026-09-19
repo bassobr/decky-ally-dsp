@@ -1,6 +1,4 @@
-# Keeps build-time npm dependencies, the SHA-pinned GitHub Actions and the
-# converter submodule fresh. Security updates open PRs immediately; regular
-# version updates are grouped weekly to limit PR noise for a solo-maintained repo.
+# npm, GitHub Actions and the converter submodule; regular updates grouped weekly.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -12,7 +10,7 @@ updates:
         patterns:
           - "*"
     ignore:
-      # TypeScript 7 drops options the Decky rollup toolchain still relies on; stay on 5.x until @decky/rollup moves.
+      # TypeScript 7 is not supported by the Decky rollup toolchain yet.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 

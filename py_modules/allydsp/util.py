@@ -1,5 +1,4 @@
-"""Small helpers: subprocesses with a sane user-session environment, hashing,
-atomic writes, JSON files."""
+"""Subprocess, hashing, atomic file and JSON helpers."""
 from __future__ import annotations
 
 import hashlib
@@ -27,9 +26,8 @@ class Result:
 
 
 def user_env(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
-    """Environment for talking to the user's systemd/PipeWire session. Decky
-    starts plugin backends from a root service, so XDG_RUNTIME_DIR and the
-    session bus address are not inherited and have to be set explicitly."""
+    """Environment for the user's systemd and PipeWire session; Decky does not
+    pass XDG_RUNTIME_DIR or the session bus address to plugin backends."""
     uid = os.getuid()
     runtime = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{uid}"
     env = {

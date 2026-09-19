@@ -1,5 +1,4 @@
-"""Pause the speaker chain while headphones are plugged into the shared analog
-sink; resume when they are removed."""
+"""Pause the chain while headphones use the shared analog sink."""
 from __future__ import annotations
 
 import asyncio
@@ -53,6 +52,6 @@ class JackWatcher:
                                 await res
             except asyncio.CancelledError:
                 raise
-            except Exception as e:  # never let the watcher die
+            except Exception as e:
                 logger.warning("jack watcher: %s", e)
             await asyncio.sleep(self.interval)

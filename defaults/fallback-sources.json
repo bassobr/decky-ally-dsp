@@ -1,5 +1,5 @@
 {
-  "_comment": "Pinned fallback if the ASUS support API is unreachable. Update url and sha256 together.",
+  "_comment": "Fallback when the ASUS support API is unreachable; update url and sha256 together.",
   "asus_api": "https://www.asus.com/support/webapi/ProductV2/GetPDDrivers?website=us&model=rog+xbox+ally+x+%EF%BC%882025%EF%BC%89+rc73xa&pdhashedid=&osid=52",
   "asus_cdn": "https://dlcdnets.asus.com",
   "package": {

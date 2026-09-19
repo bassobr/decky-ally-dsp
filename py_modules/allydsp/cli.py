@@ -1,6 +1,5 @@
-"""Command line front-end for testing and support:
-    python3 -m allydsp.cli doctor|setup|convert|apply|enable|disable|status|presets|update-check|update-verify|import-xml|unit-remove
-Runs with the system Python; uses the same on-disk state as the Decky plugin."""
+"""CLI for testing and support; shares its on-disk state with the Decky plugin.
+    python3 -m allydsp.cli doctor|setup|convert|apply|enable|disable|status|presets|update-check|update-verify|import-xml|unit-remove"""
 from __future__ import annotations
 
 import argparse

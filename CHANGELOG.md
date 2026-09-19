@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 (2026-09-19)
+
+- Update @types/react and @types/react-dom to 19.3.0 (Dependabot).
+
 ## 0.1.2 (2026-09-19)
 
 - Keep unit and runtime data when Decky replaces the plugin during an update

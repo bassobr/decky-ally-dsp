@@ -1,0 +1,19 @@
+# build output
+dist/
+out/
+bin/
+defaults/converter/
+node_modules/
+.pnpm-store/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+# secrets and local-only data (proprietary tuning, keys, test artefacts)
+local/
+*.secret
+# editors / os
+.vscode/settings.json
+.idea/
+.DS_Store
+*.log

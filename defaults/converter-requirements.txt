@@ -1,0 +1,4 @@
+# Pinned to the versions verified on SteamOS 3.8.16 (Python 3.13.5). The
+# installer falls back to unpinned numpy/scipy if these wheels are unavailable.
+numpy==2.5.3
+scipy==1.18.1

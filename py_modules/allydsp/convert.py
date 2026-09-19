@@ -77,11 +77,13 @@ def converter_ok() -> bool:
 
 
 def converter_version() -> Optional[str]:
-    if not converter_ok() or not os.path.exists(venv_python()):
+    if not converter_ok():
         return None
-    r = run([venv_python(), os.path.join(paths.CONVERTER_DIR, "dolby_to_pipewire.py"), "--version"], timeout=60,
-            env=user_env({"LV2_PATH": f"{paths.LV2_DIR}:/usr/lib/lv2"}))
-    return (r.out or r.err).strip().splitlines()[-1][:80] if (r.out or r.err).strip() else None
+    try:
+        with open(os.path.join(paths.CONVERTER_DIR, "COMMIT"), "r", encoding="utf-8") as f:
+            return f.read().strip()[:40] or None
+    except OSError:
+        return None
 
 
 def extras_flags(extras: Dict[str, Any], allow_virtual_bass: bool = False) -> List[str]:

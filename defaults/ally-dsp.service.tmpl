@@ -5,6 +5,7 @@
 Description=Ally DSP speaker filter chain (Dolby tuning for the ROG Xbox Ally X)
 After=pipewire.service wireplumber.service
 BindsTo=pipewire.service
+ConditionPathExists={conf_path}
 
 [Service]
 Type=simple

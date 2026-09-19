@@ -134,9 +134,8 @@ def run_setup(progress: Progress, force: bool = False, use_network: bool = True,
     if activate:
         _emit(progress, "activate", "running", "Starting the filter chain")
         res = settings.resolve(st, None)
-        dsp_runtime.ensure_unit()
-        dsp_runtime.enable(True)
         active = dsp_runtime.apply_preset(res["profile"], res["voicing"], settings.clamp_pregain(extras.get("preGainDb", 0)))
+        dsp_runtime.enable(True)
         _emit(progress, "activate", "done", f"Active: {res['profile']} / {res['voicing']}" + ("" if active.get("verified") else " (node not verified yet)"))
     else:
         _emit(progress, "activate", "skipped", "Not activated")

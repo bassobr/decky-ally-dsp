@@ -4,6 +4,8 @@ Stand: 19.09.2026. Baut auf `docs/recherche-ideensammlung.md` auf (dort Abschnit
 
 ---
 
+> **Umsetzungsstatus 19.09.2026:** M0–M5 sind als v0.1.0 umgesetzt und im Repository https://github.com/bassobr/decky-ally-dsp veröffentlicht (Setup-Wizard, Laufzeit als systemd-User-Unit, Presets global/pro Spiel, Kopfhörer-Pause, Diagnose, signierter Updater, CI/Release, `install.sh`). Auf dem Ally lief das Setup per CLI durch: 24 Presets, Kette aktiv zwischen Valves Loopback-Filter und dem Lautsprecher-Sink. Offen: Hörtest durch den Nutzer, Bedienung im QAM, Update-Flow mit einer zweiten Version, Suspend/Resume.
+
 ## 1. Ziel und Umfang
 
 **Ziel:** Ein Decky-Plugin, das dem Xbox Ally X unter SteamOS das Lautsprecher-Tuning zurückgibt, das unter Windows Dolby Atmos liefert. Das Tuning stammt aus ASUS' eigenem Treiberpaket und wird auf dem Gerät in eine PipeWire-Filter-Chain übersetzt.

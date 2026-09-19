@@ -1,5 +1,4 @@
-"""Filesystem layout. Under Decky the DECKY_* variables win; the CLI falls back
-to the standard Decky locations so both share one on-disk state."""
+"""Filesystem layout; DECKY_* variables take precedence, the CLI falls back to the same locations."""
 from __future__ import annotations
 
 import os

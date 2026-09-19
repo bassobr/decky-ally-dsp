@@ -1,60 +1,4 @@
-const de = {
-  title: "Ally DSP",
-  status: "Status",
-  active: "aktiv",
-  inactive: "inaktiv",
-  pausedHeadphones: "pausiert (Kopfhörer)",
-  notSetUp: "Noch nicht eingerichtet",
-  setupNeeded: "Das Dolby-Tuning muss einmalig heruntergeladen und umgewandelt werden.",
-  runSetup: "Setup starten",
-  rerunSetup: "Setup erneut ausführen",
-  sound: "Klang",
-  dspEnabled: "DSP aktiv",
-  dspEnabledDesc: "Aus = Bypass zum A/B-Vergleich",
-  preset: "Preset (global)",
-  voicing: "Voicing",
-  thisGame: "Dieses Spiel",
-  perGameToggle: "Eigenes Preset für dieses Spiel",
-  perGamePreset: "Preset",
-  noGame: "Kein Spiel läuft. Per-Game-Presets erscheinen hier, sobald ein Spiel gestartet ist.",
-  savedPerGame: "Gespeicherte Spiel-Presets",
-  remove: "Entfernen",
-  extras: "Extras",
-  autogain: "Volume Leveler",
-  autogainDesc: "Dolby-Lautheitsausgleich (Standard an). Bei hörbarem Pumpen ausschalten.",
-  dialog: "Dialog-Enhancer",
-  regulator: "Regulator",
-  regulatorDesc: "Dolbys Übersteuerungsschutz. Nur ausschalten, wenn die Lautstärke wogt.",
-  virtualBass: "Virtual Bass (experimentell)",
-  preGain: "Pre-Gain",
-  reconverting: "Presets werden neu erzeugt …",
-  maintenance: "Wartung",
-  checkUpdate: "Nach Updates suchen",
-  updateAvailable: "Update verfügbar",
-  installUpdate: "Update installieren",
-  upToDate: "Aktuell",
-  updateFailed: "Update fehlgeschlagen",
-  diagnostics: "Diagnose",
-  setupTitle: "Ally DSP einrichten",
-  setupIntro: "Lädt ASUS' Dolby-Paket (≈10 MB) auf dieses Gerät, extrahiert das Tuning für den Codec und wandelt es in PipeWire-Presets um. Dafür wird einmalig eine Python-Umgebung mit numpy/scipy (≈220 MB) angelegt. Nichts davon verlässt das Gerät.",
-  start: "Start",
-  cancel: "Abbrechen",
-  back: "Zurück",
-  refresh: "Aktualisieren",
-  done: "Fertig",
-  stepHardware: "Hardware prüfen",
-  stepResolve: "ASUS-Paket ermitteln",
-  stepDownload: "Herunterladen",
-  stepExtract: "Tuning extrahieren",
-  stepVenv: "Konverter vorbereiten",
-  stepConvert: "Presets umwandeln",
-  stepActivate: "Aktivieren",
-  unsupported: "Dieses Gerät wird nicht unterstützt",
-  forceUnsupported: "Trotzdem versuchen",
-  version: "Version",
-};
-
-const en: typeof de = {
+export const t = {
   title: "Ally DSP",
   status: "Status",
   active: "active",
@@ -92,7 +36,7 @@ const en: typeof de = {
   updateFailed: "Update failed",
   diagnostics: "Diagnostics",
   setupTitle: "Set up Ally DSP",
-  setupIntro: "Downloads ASUS' Dolby package (≈10 MB) onto this device, extracts the tuning for its codec and converts it into PipeWire presets. A Python environment with numpy/scipy (≈220 MB) is created once. Nothing leaves the device.",
+  setupIntro: "Downloads ASUS' Dolby package (about 10 MB) onto this device, extracts the tuning for its codec and converts it into PipeWire presets. A Python environment with numpy/scipy (about 220 MB) is created once. Nothing leaves the device.",
   start: "Start",
   cancel: "Cancel",
   back: "Back",
@@ -109,17 +53,6 @@ const en: typeof de = {
   forceUnsupported: "Try anyway",
   version: "Version",
 };
-
-function pickLanguage(): typeof de {
-  try {
-    const lang = (navigator.language || "en").toLowerCase();
-    return lang.startsWith("de") ? de : en;
-  } catch {
-    return en;
-  }
-}
-
-export const t = pickLanguage();
 
 export const STEP_LABELS: Record<string, string> = {
   hardware: t.stepHardware,

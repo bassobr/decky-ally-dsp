@@ -1,4 +1,4 @@
-"""Read-only probes: HDA codec, DMI, PipeWire graph, TAS2781 controls, LV2 availability."""
+"""Read-only probes: codec, DMI, PipeWire graph, TAS2781 controls, LV2 plugins."""
 from __future__ import annotations
 
 import json
@@ -106,7 +106,7 @@ def _props(obj: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def find_speaker_sink(dump: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """The internal analog ALSA sink (speakers and 3.5 mm jack share it)."""
+    """Internal analog sink shared by speakers and the 3.5 mm jack."""
     for obj in dump:
         p = _props(obj)
         name = str(p.get("node.name", ""))
@@ -145,7 +145,7 @@ def filter_node_present(dump: List[Dict[str, Any]], node_name: str = INPUT_NODE)
 
 
 def filter_links(dump: List[Dict[str, Any]]) -> Dict[str, int]:
-    """Count links touching our nodes; a healthy chain has inputs and outputs."""
+    """Link counts on the chain's input and output nodes."""
     ids = {o.get("id"): _props(o).get("node.name") for o in dump if _props(o).get("node.name", "").startswith("effect_")}
     counts = {"input": 0, "output": 0}
     for obj in dump:

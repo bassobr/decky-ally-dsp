@@ -1,6 +1,5 @@
-"""Setup step: locate ASUS' public Dolby Atmos driver package, download it with
-checksum verification, carve the embedded 7z archive out of the Inno Setup
-installer and extract the DAX3 tuning XML for this device's codec."""
+"""Locate, download and unpack the ASUS Dolby Atmos driver package and extract
+the DAX3 tuning XML for this codec."""
 from __future__ import annotations
 
 import json
@@ -98,8 +97,7 @@ def head_size(url: str) -> Optional[int]:
 
 def download(url: str, dest: str, expected_sha256: Optional[str] = None, expected_size: Optional[int] = None,
              progress: Progress = None, timeout: int = 1800) -> str:
-    """Download with curl (resumable), report progress by polling the file size,
-    verify SHA-256. Returns the hex digest."""
+    """Resumable curl download with size-based progress and SHA-256 check. Returns the digest."""
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     total = expected_size or head_size(url)
     cmd = ["curl", "-fL", "--retry", "3", "--retry-delay", "2", "--connect-timeout", "15",
@@ -173,8 +171,7 @@ _ATTR = r'\s+value\s*=\s*"([^"]*)"'
 
 
 def validate_xml(xml_path: str, ssid: str) -> Dict[str, Any]:
-    """Sanity-check the DAX3 XML without xml.etree (absent from Decky's bundled
-    Python). The format is regular enough for anchored regexes."""
+    """Validate the DAX3 XML with regexes; Decky's bundled Python has no xml.etree."""
     with open(xml_path, "r", encoding="utf-8", errors="replace") as f:
         text = f.read()
     if not re.search(r"<device_data[\s>]", text):
@@ -259,7 +256,7 @@ def extract_dax3(exe_path: str, codec: Dict[str, Any], progress: Progress = None
 
 
 def import_xml(src_path: str, codec: Dict[str, Any]) -> Dict[str, Any]:
-    """Manual import (USB stick, mounted Windows DriverStore)."""
+    """Import a tuning XML from another source (USB stick, mounted DriverStore)."""
     info = validate_xml(src_path, codec["ssid"].upper())
     os.makedirs(paths.DAX3_DIR, exist_ok=True)
     dst = os.path.join(paths.DAX3_DIR, os.path.basename(src_path))

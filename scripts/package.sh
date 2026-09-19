@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the release zip: out/ally-dsp-<version>.zip with the Decky layout "Ally DSP/...".
+# Build out/ally-dsp-<version>.zip in the Decky layout ("Ally DSP/...").
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 NAME="Ally DSP"

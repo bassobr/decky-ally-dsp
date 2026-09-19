@@ -1,5 +1,4 @@
-"""Self-update over GitHub Releases. The backend only checks and verifies; the
-actual install is delegated to Decky Loader's own installer (no root needed)."""
+"""Update check and release verification; installation is delegated to Decky Loader."""
 from __future__ import annotations
 
 import json
@@ -83,8 +82,7 @@ def _download_small(url: str, dest: str, timeout: int = 30) -> None:
 
 
 def verify_release(latest: Dict[str, Any], pubkey_path: str = paths.PUBKEY_FILE) -> Dict[str, Any]:
-    """Download SHA256SUMS + .minisig, verify the signature with the pinned key,
-    return what Decky's installer needs: artifact URL, name, version, sha256."""
+    """Verify SHA256SUMS.minisig with the pinned key and return artifact URL, name, version, sha256."""
     version = str(latest.get("version") or "")
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.]+)?", version):
         raise RuntimeError(f"refusing unexpected version string {version!r}")

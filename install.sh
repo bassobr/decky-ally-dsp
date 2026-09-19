@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Ally DSP installer for SteamOS with Decky Loader.
+# Ally DSP installer: downloads the latest release, verifies checksum and
+# signature, installs into ~/homebrew/plugins/Ally DSP.
 #   curl -sL https://github.com/bassobr/decky-ally-dsp/raw/main/install.sh -o /tmp/ally-dsp-install.sh && sudo bash /tmp/ally-dsp-install.sh
-# Downloads the latest GitHub release zip, verifies it against SHA256SUMS and
-# installs it into ~/homebrew/plugins/Ally DSP. Later updates happen in-app.
 set -euo pipefail
 PLUGIN_NAME="Ally DSP"
 REPO="bassobr/decky-ally-dsp"

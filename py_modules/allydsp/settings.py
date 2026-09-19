@@ -1,4 +1,4 @@
-"""Persistent settings (JSON in DECKY_PLUGIN_SETTINGS_DIR) and preset resolution."""
+"""Settings persistence and preset resolution."""
 from __future__ import annotations
 
 import hashlib

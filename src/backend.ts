@@ -14,11 +14,11 @@ export const checkForUpdate = callable<[force: boolean], UpdateInfo>("check_for_
 export const prepareUpdate = callable<[], UpdateArtifact>("prepare_update");
 export const getDiagnostics = callable<[], { text: string }>("get_diagnostics");
 
-/** Hand the verified release to Decky Loader's own installer (no root needed). */
+/** Hand the verified release to Decky Loader's installer. */
 export async function installViaDecky(a: UpdateArtifact): Promise<void> {
   const backend = window.DeckyBackend;
   if (!backend?.callable) throw new Error("Decky install API not available");
   const install = backend.callable<[string, string, string, string, number], void>("utilities/install_plugin");
-  // InstallType.UPDATE = 2 in decky-loader's frontend enum
+  // InstallType.UPDATE = 2 (decky-loader frontend enum)
   await install(a.artifact, a.name, a.version, a.hash, 2);
 }

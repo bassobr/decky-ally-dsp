@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep only the given plugins in an LSP manifest.ttl (subjects use the plug: prefix)."""
+"""Keep only the given plugins in an LSP manifest.ttl."""
 import re
 import sys
 

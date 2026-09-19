@@ -1,4 +1,4 @@
-"""Ally DSP: Decky Loader plugin entry point. Thin async facade over py_modules/allydsp."""
+"""Decky Loader entry point; async facade over py_modules/allydsp."""
 from __future__ import annotations
 
 import asyncio
@@ -38,7 +38,7 @@ class Plugin:
         tasks = [t for t in (getattr(self.jack, "_task", None), self.setup_task, self.convert_task) if t and not t.done()]
         for t in tasks:
             t.cancel()
-        if tasks:  # await cancellation so asyncio does not complain about destroyed pending tasks
+        if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
         decky.logger.info("Ally DSP backend unloaded (filter chain keeps running)")
 
@@ -83,7 +83,7 @@ class Plugin:
         settings.save(self.settings)
 
     async def _apply_current(self, force_restart: bool = False) -> Optional[Dict[str, Any]]:
-        """Apply the preset resolved for the running app; restart only on change."""
+        """Apply the resolved preset; restart the unit only when it changes."""
         res = settings.resolve(self.settings, self.running_app)
         if not convert.preset_available(res["profile"], res["voicing"]):
             decky.logger.warning("preset %s/%s not available yet", res["profile"], res["voicing"])

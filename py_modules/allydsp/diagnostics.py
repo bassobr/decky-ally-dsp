@@ -1,4 +1,4 @@
-"""Health report for the diagnostics page and bug reports (no root required)."""
+"""Diagnostics report for the UI and bug reports."""
 from __future__ import annotations
 
 import json

@@ -1,5 +1,4 @@
-"""The audio runtime: a systemd user unit running `pipewire -c` with the active
-preset, following Valve's filter-chain.service pattern."""
+"""systemd user unit that runs `pipewire -c` with the active preset."""
 from __future__ import annotations
 
 import os
@@ -8,7 +7,7 @@ import time
 from typing import Any, Dict, Optional
 
 from . import confgen, hardware, paths
-from .constants import INPUT_NODE, UPDATE_CHECK_INTERVAL_S  # noqa: F401 (re-export convenience)
+from .constants import INPUT_NODE
 from .log import logger
 from .util import atomic_copy, atomic_write_text, read_json, run, write_json
 

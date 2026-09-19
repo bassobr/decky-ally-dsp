@@ -1,13 +1,9 @@
 """minisign-compatible signing and verification (https://jedisct1.github.io/minisign/).
 
-Public key file:  untrusted comment line + base64("Ed" || key_id[8] || pk[32])
-Signature file:   untrusted comment line
-                  base64(sig_alg[2] || key_id[8] || signature[64])
-                  "trusted comment: <text>"
-                  base64(global_signature[64])
-sig_alg "ED": signature over BLAKE2b-512(file) (prehashed, minisign default)
-sig_alg "Ed": signature over the raw file (legacy)
-global_signature: Ed25519 over (signature || trusted_comment)
+Public key file: comment line + base64("Ed" || key_id[8] || pk[32]).
+Signature file: comment line, base64(alg[2] || key_id[8] || sig[64]),
+"trusted comment: ..." line, base64(global_sig[64]). alg "ED" signs
+BLAKE2b-512(file), "Ed" signs the raw file; global_sig covers sig || comment.
 
 CLI: python3 -m allydsp.minisign keygen|sign|verify
 """

@@ -1,10 +1,8 @@
-"""Ed25519 (RFC 8032) in pure Python, extended coordinates.
+"""Ed25519 (RFC 8032) in pure Python with extended coordinates.
 
-Written for Ally DSP because neither SteamOS nor Decky's bundled Python ship an
-Ed25519 primitive. Used to verify release signatures on the device and to sign
-in CI. Not constant-time: verification handles no secret, and CI signing has no
-remote timing observer. Do not reuse for long-lived secrets on user devices.
-Correctness is pinned by the RFC 8032 test vectors in tests/.
+Decky's bundled Python has no Ed25519 primitive. Used to verify release
+signatures on the device and to sign in CI. Not constant-time; do not use it
+with long-lived secrets on user devices. Tested against the RFC 8032 vectors.
 """
 from __future__ import annotations
 

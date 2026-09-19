@@ -29,3 +29,15 @@ def test_version_compare_and_sums():
     assert not updater.is_newer("0.1.0-beta.1", "0.1.0")
     sums = updater.parse_sums("abc\n" + "a" * 64 + "  ally-dsp-0.1.0.zip\n" + "b" * 64 + " *other.zip\n")
     assert sums == {"ally-dsp-0.1.0.zip": "a" * 64, "other.zip": "b" * 64}
+
+
+def test_update_marker(tmp_path, monkeypatch):
+    marker = tmp_path / ".update-pending"
+    monkeypatch.setattr(updater, "UPDATE_MARKER", str(marker))
+    monkeypatch.setattr(updater.paths, "RUNTIME_DIR", str(tmp_path))
+    assert not updater.update_in_progress()
+    updater.mark_update_pending()
+    assert updater.update_in_progress()
+    assert not updater.update_in_progress(now=updater.UPDATE_MARKER_TTL_S + 10 ** 10)
+    updater.clear_update_marker()
+    assert not updater.update_in_progress()

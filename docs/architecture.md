@@ -94,7 +94,12 @@ Steps 3–4 and 6 are skipped when provenance and preset metadata already match.
    and its SHA-256.
 3. The frontend calls Decky's `utilities/install_plugin` with that data; Decky
    confirms with the user, downloads, checks the hash, replaces the plugin and
-   reloads it. Runtime data and settings stay in place.
+   reloads it. Decky calls `_uninstall` while replacing the plugin, so
+   `prepare_update` writes `data/.update-pending` and `_uninstall` leaves unit and
+   runtime data alone while that marker is fresh. `_startup` re-creates the unit
+   and active preset, or re-runs setup when data is missing. Steam may keep the
+   old UI bundle cached until it is restarted; the panel shows a hint when the
+   UI and backend versions differ.
 
 First install: `install.sh` (sudo) downloads the latest release, verifies
 `SHA256SUMS` and the signature, installs into `~/homebrew/plugins/Ally DSP` and

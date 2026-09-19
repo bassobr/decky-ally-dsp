@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 (2026-09-19)
+
+- Keep unit and runtime data when Decky replaces the plugin during an update
+  (Decky calls `_uninstall` in that path); real uninstalls still clean up.
+- Restore the active preset and unit on startup; re-run setup if data is missing.
+- Show a hint when Steam still runs an older cached UI bundle.
+
 ## 0.1.1 (2026-09-19)
 
 - Remove the Custom 1–3 presets (Dolby's neutral personalize profiles).

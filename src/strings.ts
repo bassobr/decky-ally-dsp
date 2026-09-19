@@ -52,6 +52,7 @@ export const t = {
   unsupported: "This device is not supported",
   forceUnsupported: "Try anyway",
   version: "Version",
+  staleUi: "Interface is from an older version. Restart Steam to load the updated UI.",
 };
 
 export const STEP_LABELS: Record<string, string> = {

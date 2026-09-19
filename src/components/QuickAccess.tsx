@@ -25,6 +25,7 @@ import { usePluginState } from "../hooks/usePluginState";
 import { setupIntent } from "../setupIntent";
 import { t } from "../strings";
 import type { PluginState } from "../types";
+import { FRONTEND_VERSION } from "../version";
 
 function goto(path: string) {
   Navigation.Navigate(path);
@@ -117,6 +118,11 @@ export function QuickAccess() {
         <PanelSectionRow>
           <Field label={statusText(s)} description={`${activeLabel}${resolved.source === "app" ? ` · ${t.thisGame}` : ""}`} />
         </PanelSectionRow>
+        {s.version !== FRONTEND_VERSION && (
+          <PanelSectionRow>
+            <Field label={t.staleUi} description={`UI ${FRONTEND_VERSION}, backend ${s.version}`} />
+          </PanelSectionRow>
+        )}
         {!s.setup.done && (
           <PanelSectionRow>
             <ButtonItem layout="below" description={t.setupNeeded} onClick={() => { setupIntent.force = false; goto("/ally-dsp/setup"); }}>

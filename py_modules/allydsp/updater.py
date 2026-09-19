@@ -14,6 +14,33 @@ from .minisign import verify_file
 from .util import run
 
 
+UPDATE_MARKER = os.path.join(paths.RUNTIME_DIR, ".update-pending")
+UPDATE_MARKER_TTL_S = 15 * 60
+
+
+def mark_update_pending() -> None:
+    """Written before handing the release to Decky; _uninstall then keeps the data."""
+    os.makedirs(paths.RUNTIME_DIR, exist_ok=True)
+    with open(UPDATE_MARKER, "w", encoding="utf-8") as f:
+        f.write(str(int(time.time())))
+
+
+def update_in_progress(now: Optional[float] = None) -> bool:
+    try:
+        with open(UPDATE_MARKER, "r", encoding="utf-8") as f:
+            stamp = int(f.read().strip() or 0)
+    except (OSError, ValueError):
+        return False
+    return 0 <= (now or time.time()) - stamp < UPDATE_MARKER_TTL_S
+
+
+def clear_update_marker() -> None:
+    try:
+        os.unlink(UPDATE_MARKER)
+    except OSError:
+        pass
+
+
 def parse_version(v: str) -> Tuple[int, ...]:
     core = str(v).strip().lstrip("vV").split("-")[0].split("+")[0]
     parts = []

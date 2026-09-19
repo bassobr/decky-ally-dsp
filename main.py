@@ -43,25 +43,48 @@ class Plugin:
         decky.logger.info("Ally DSP backend unloaded (filter chain keeps running)")
 
     async def _uninstall(self):
+        # Decky also calls this while replacing the plugin during an update.
+        if updater.update_in_progress():
+            decky.logger.info("update in progress: keeping unit and runtime data")
+            return
         try:
             await asyncio.to_thread(dsp_runtime.remove_unit)
             shutil.rmtree(paths.RUNTIME_DIR, ignore_errors=True)
-            decky.logger.info("Ally DSP uninstalled: unit removed, runtime data deleted")
+            decky.logger.info("uninstalled: unit removed, runtime data deleted")
         except Exception as e:
             decky.logger.error("uninstall cleanup failed: %s", e)
 
     async def _startup(self):
         try:
+            updater.clear_update_marker()
             if self.settings["setup"].get("done"):
-                await asyncio.to_thread(dsp_runtime.ensure_unit)
-                if self.settings.get("enabled") and not await asyncio.to_thread(dsp_runtime.is_active):
-                    dump = await asyncio.to_thread(hardware.pw_dump)
-                    if not hardware.headphones_active(hardware.output_route(dump)):
-                        await asyncio.to_thread(dsp_runtime.start)
+                await self._reconcile()
             if self.settings["update"].get("autoCheck", True):
                 await self.check_for_update(False)
         except Exception as e:
             decky.logger.error("startup reconcile failed: %s", e)
+
+    async def _reconcile(self) -> None:
+        """Bring unit and active preset back after an update or lost data."""
+        res = settings.resolve(self.settings, self.running_app)
+        have_presets = any(v for p in convert.list_presets().values() for v in p.values())
+        if not have_presets or not asus_fetch.current_xml() or not await asyncio.to_thread(convert.venv_ok):
+            decky.logger.warning("setup data incomplete, running setup again")
+            await self.run_setup(False, False)
+            return
+        await asyncio.to_thread(dsp_runtime.ensure_unit)
+        if self.settings.get("enabled"):
+            await asyncio.to_thread(dsp_runtime.enable, True)
+            if not convert.preset_available(res["profile"], res["voicing"]):
+                return
+            active = dsp_runtime.active_meta() or {}
+            if not os.path.isfile(dsp_runtime.ACTIVE_CONF) or active.get("profile") != res["profile"] \
+                    or active.get("voicing") != res["voicing"]:
+                await self._apply_current(force_restart=True)
+            elif not await asyncio.to_thread(dsp_runtime.is_active):
+                dump = await asyncio.to_thread(hardware.pw_dump)
+                if not hardware.headphones_active(hardware.output_route(dump)):
+                    await asyncio.to_thread(dsp_runtime.start)
 
     # ---------------------------------------------------------------- helpers
     def _should_run(self) -> bool:
@@ -287,7 +310,9 @@ class Plugin:
             latest = await asyncio.to_thread(updater.fetch_latest)
             self.settings["update"]["latest"] = latest
             self._save()
-        return await asyncio.to_thread(updater.verify_release, latest)
+        info = await asyncio.to_thread(updater.verify_release, latest)
+        updater.mark_update_pending()
+        return info
 
     # ---------------------------------------------------------------- diagnostics
     async def get_diagnostics(self) -> Dict[str, Any]:

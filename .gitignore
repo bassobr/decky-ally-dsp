@@ -18,3 +18,4 @@ local/
 .DS_Store
 *.log
 .cache/
+src/version.ts

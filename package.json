@@ -1,13 +1,14 @@
 {
   "name": "ally-dsp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Decky plugin: Dolby speaker tuning for the ROG Xbox Ally X on SteamOS",
   "type": "module",
   "packageManager": "pnpm@11.20.0",
   "scripts": {
+    "prebuild": "node scripts/gen-version.mjs",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node scripts/gen-version.mjs && tsc --noEmit"
   },
   "repository": {
     "type": "git",

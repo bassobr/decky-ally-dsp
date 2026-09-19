@@ -35,10 +35,11 @@ class Plugin:
         decky.logger.info("Ally DSP backend started (plugin dir %s)", paths.PLUGIN_DIR)
 
     async def _unload(self):
-        self.jack.cancel()
-        for t in (self.setup_task, self.convert_task):
-            if t and not t.done():
-                t.cancel()
+        tasks = [t for t in (getattr(self.jack, "_task", None), self.setup_task, self.convert_task) if t and not t.done()]
+        for t in tasks:
+            t.cancel()
+        if tasks:  # await cancellation so asyncio does not complain about destroyed pending tasks
+            await asyncio.gather(*tasks, return_exceptions=True)
         decky.logger.info("Ally DSP backend unloaded (filter chain keeps running)")
 
     async def _uninstall(self):

@@ -53,6 +53,10 @@ export const t = {
   forceUnsupported: "Try anyway",
   version: "Version",
   staleUi: "Interface is from an older version. Restart Steam to load the updated UI.",
+  autoRestart: "Restart Steam after updates",
+  autoRestartDesc: "Restarts the Steam client right after an update so the new interface loads.",
+  restartingSteam: "Update installed, restarting Steam…",
+  restartSteam: "Restart Steam",
 };
 
 export const STEP_LABELS: Record<string, string> = {

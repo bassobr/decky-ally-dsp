@@ -1,5 +1,5 @@
 import { callable } from "@decky/api";
-import type { DspState, Extras, PerAppEntry, PluginState, SetupProgress, UpdateArtifact, UpdateInfo } from "./types";
+import type { DspState, Extras, PerAppEntry, PluginState, Settings, SetupProgress, UpdateArtifact, UpdateInfo } from "./types";
 
 export const getState = callable<[], PluginState>("get_state");
 export const runSetup = callable<[force: boolean, allowUnsupported: boolean], { started: boolean; reason?: string }>("run_setup");
@@ -13,6 +13,7 @@ export const setExtras = callable<[extras: Partial<Extras>], { ok: boolean; extr
 export const checkForUpdate = callable<[force: boolean], UpdateInfo>("check_for_update");
 export const prepareUpdate = callable<[], UpdateArtifact>("prepare_update");
 export const getDiagnostics = callable<[], { text: string }>("get_diagnostics");
+export const setUpdatePrefs = callable<[prefs: { autoRestartSteam?: boolean; autoCheck?: boolean }], Settings["update"]>("set_update_prefs");
 
 /** Hand the verified release to Decky Loader's installer. */
 export async function installViaDecky(a: UpdateArtifact): Promise<void> {

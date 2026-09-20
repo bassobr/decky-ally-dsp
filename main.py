@@ -56,7 +56,10 @@ class Plugin:
 
     async def _startup(self):
         try:
-            updater.clear_update_marker()
+            if updater.update_in_progress():
+                updater.clear_update_marker()
+                await decky.emit("update_installed", {"version": decky.DECKY_PLUGIN_VERSION,
+                                                      "autoRestart": bool(self.settings["update"].get("autoRestartSteam", True))})
             if self.settings["setup"].get("done"):
                 await self._reconcile()
             if self.settings["update"].get("autoCheck", True):
@@ -303,6 +306,13 @@ class Plugin:
         self._save()
         await decky.emit("update_state", res)
         return res
+
+    async def set_update_prefs(self, prefs: Dict[str, Any]) -> Dict[str, Any]:
+        for key in ("autoRestartSteam", "autoCheck"):
+            if key in prefs:
+                self.settings["update"][key] = bool(prefs[key])
+        self._save()
+        return dict(self.settings["update"])
 
     async def prepare_update(self) -> Dict[str, Any]:
         latest = self.settings["update"].get("latest")

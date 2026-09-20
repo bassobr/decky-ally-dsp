@@ -20,7 +20,9 @@ import {
   setExtras,
   setGlobal,
   setPerApp,
+  setUpdatePrefs,
 } from "../backend";
+import { armRestartAfterInstall, restartSteam } from "../updateFlow";
 import { usePluginState } from "../hooks/usePluginState";
 import { setupIntent } from "../setupIntent";
 import { t } from "../strings";
@@ -109,6 +111,7 @@ export function QuickAccess() {
   const onInstallUpdate = () =>
     run(async () => {
       const artifact = await prepareUpdate();
+      armRestartAfterInstall(artifact.version, s.settings.update.autoRestartSteam !== false);
       await installViaDecky(artifact);
     });
 
@@ -120,7 +123,9 @@ export function QuickAccess() {
         </PanelSectionRow>
         {s.version !== FRONTEND_VERSION && (
           <PanelSectionRow>
-            <Field label={t.staleUi} description={`UI ${FRONTEND_VERSION}, backend ${s.version}`} />
+            <ButtonItem layout="below" label={t.staleUi} description={`UI ${FRONTEND_VERSION}, backend ${s.version}`} onClick={() => restartSteam()}>
+              {t.restartSteam}
+            </ButtonItem>
           </PanelSectionRow>
         )}
         {!s.setup.done && (
@@ -241,6 +246,10 @@ export function QuickAccess() {
             </ButtonItem>
           </PanelSectionRow>
         )}
+        <PanelSectionRow>
+          <ToggleField label={t.autoRestart} description={t.autoRestartDesc} checked={s.settings.update.autoRestartSteam !== false} disabled={busy}
+            onChange={(v) => void run(() => setUpdatePrefs({ autoRestartSteam: v }))} />
+        </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={() => goto("/ally-dsp/diagnostics")}>{t.diagnostics}</ButtonItem>
         </PanelSectionRow>

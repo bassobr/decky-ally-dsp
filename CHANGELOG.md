@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 (2026-09-20)
+
+- Restart Steam automatically after an in-app update so the new UI loads
+  (Maintenance toggle, default on); manual restart button when the UI is stale.
+
 ## 0.1.3 (2026-09-19)
 
 - Update @types/react and @types/react-dom to 19.3.0 (Dependabot).

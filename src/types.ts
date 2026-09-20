@@ -36,7 +36,7 @@ export interface Settings {
   global: { profile: string; voicing: string };
   perApp: Record<string, PerAppEntry>;
   extras: Extras;
-  update: { channel: string; lastCheck: number; autoCheck: boolean; error?: string | null };
+  update: { channel: string; lastCheck: number; autoCheck: boolean; autoRestartSteam?: boolean; error?: string | null };
   setup: {
     done: boolean;
     packageVersion?: string | null;

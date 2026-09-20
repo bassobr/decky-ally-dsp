@@ -15,7 +15,7 @@ DEFAULTS: Dict[str, Any] = {
     "global": {"profile": DEFAULT_PROFILE, "voicing": DEFAULT_VOICING},
     "perApp": {},
     "extras": {"autogain": True, "dialog": True, "regulator": True, "virtualBass": False, "preGainDb": 0.0},
-    "update": {"channel": "stable", "lastCheck": 0, "latest": None, "autoCheck": True},
+    "update": {"channel": "stable", "lastCheck": 0, "latest": None, "autoCheck": True, "autoRestartSteam": True},
     "setup": {"done": False, "xmlSha256": None, "packageVersion": None, "converterVersion": None,
               "completedAt": None, "extrasSignature": None, "targetSink": None},
 }

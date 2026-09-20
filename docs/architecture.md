@@ -97,9 +97,13 @@ Steps 3–4 and 6 are skipped when provenance and preset metadata already match.
    reloads it. Decky calls `_uninstall` while replacing the plugin, so
    `prepare_update` writes `data/.update-pending` and `_uninstall` leaves unit and
    runtime data alone while that marker is fresh. `_startup` re-creates the unit
-   and active preset, or re-runs setup when data is missing. Steam may keep the
-   old UI bundle cached until it is restarted; the panel shows a hint when the
-   UI and backend versions differ.
+   and active preset, or re-runs setup when data is missing. Steam keeps the old UI
+   bundle until it restarts, so the frontend restarts Steam
+   (`SteamClient.User.StartRestart(false)`) when Decky reports
+   `loader/plugin_download_finish` for the plugin or the new backend emits
+   `update_installed` on its first start; the Maintenance toggle
+   `autoRestartSteam` (default on) controls this, and a stale-UI row offers a
+   manual restart.
 
 First install: `install.sh` (sudo) downloads the latest release, verifies
 `SHA256SUMS` and the signature, installs into `~/homebrew/plugins/Ally DSP` and

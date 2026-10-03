@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import shutil
 import sys
 from typing import Any, Dict, Optional
 
@@ -11,7 +10,7 @@ import decky  # type: ignore
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "py_modules"))
 
-from allydsp import asus_fetch, convert, diagnostics, dsp_runtime, hardware, paths, settings, setup_flow, updater  # noqa: E402
+from allydsp import asus_fetch, convert, deckyfix, diagnostics, dsp_runtime, hardware, paths, settings, setup_flow, updater  # noqa: E402
 from allydsp.constants import PROFILES, VOICING_LABELS, VOICINGS  # noqa: E402
 from allydsp.jackwatch import JackWatcher  # noqa: E402
 
@@ -19,6 +18,8 @@ from allydsp.jackwatch import JackWatcher  # noqa: E402
 class Plugin:
     # ---------------------------------------------------------------- lifecycle
     async def _main(self):
+        if not deckyfix.park_reader_at_eof():
+            decky.logger.warning("Decky socket workaround not applied; stopping may take 5 s")
         self.loop = asyncio.get_event_loop()
         paths.ensure_dirs()
         self.settings: Dict[str, Any] = settings.load()
@@ -28,38 +29,35 @@ class Plugin:
         self.setup_last: Optional[Dict[str, Any]] = None
         self.convert_task: Optional[asyncio.Task] = None
         self.convert_last: Optional[Dict[str, Any]] = None
+        self.update_task: Optional[asyncio.Task] = None
         self.lv2_cache: Optional[Dict[str, Any]] = None
         self.jack = JackWatcher(on_change=self._on_jack_change)
         self.jack.start(self._should_run)
         self.loop.create_task(self._startup())
         decky.logger.info("Ally DSP backend started (plugin dir %s)", paths.PLUGIN_DIR)
 
+    # _unload and _uninstall do not await: if deckyfix could not stop Decky's socket loop from
+    # spinning, the event loop never runs again once the stop begins.
     async def _unload(self):
-        tasks = [t for t in (getattr(self.jack, "_task", None), self.setup_task, self.convert_task) if t and not t.done()]
-        for t in tasks:
-            t.cancel()
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
+        for t in (getattr(self.jack, "_task", None), self.setup_task, self.convert_task, self.update_task):
+            if t and not t.done():
+                t.cancel()
         decky.logger.info("Ally DSP backend unloaded (filter chain keeps running)")
 
     async def _uninstall(self):
-        # Decky also calls this while replacing the plugin during an update.
-        if updater.update_in_progress():
-            decky.logger.info("update in progress: keeping unit and runtime data")
-            return
+        # Decky also calls this while replacing the plugin during an update, so the unit and
+        # runtime data are only removed if the plugin is still gone a minute later.
         try:
-            await asyncio.to_thread(dsp_runtime.remove_unit)
-            shutil.rmtree(paths.RUNTIME_DIR, ignore_errors=True)
-            decky.logger.info("uninstalled: unit removed, runtime data deleted")
+            if dsp_runtime.schedule_removal():
+                decky.logger.info("uninstall: unit and runtime data go in %ss unless the plugin comes back",
+                                  dsp_runtime.REMOVAL_DELAY_S)
         except Exception as e:
             decky.logger.error("uninstall cleanup failed: %s", e)
 
     async def _startup(self):
         try:
-            if updater.update_in_progress():
-                updater.clear_update_marker()
-                await decky.emit("update_installed", {"version": decky.DECKY_PLUGIN_VERSION,
-                                                      "autoRestart": bool(self.settings["update"].get("autoRestartSteam", True))})
+            await asyncio.to_thread(dsp_runtime.cancel_removal)
+            updater.remove_legacy_marker()
             if self.settings["setup"].get("done"):
                 await self._reconcile()
             if self.settings["update"].get("autoCheck", True):
@@ -93,6 +91,9 @@ class Plugin:
     def _should_run(self) -> bool:
         return bool(self.settings.get("enabled") and self.settings["setup"].get("done"))
 
+    def _setup_running(self) -> bool:
+        return bool(self.setup_task and not self.setup_task.done())
+
     def _emit_threadsafe(self, event: str, payload: Any) -> None:
         self.loop.call_soon_threadsafe(lambda: self.loop.create_task(decky.emit(event, payload)))
 
@@ -106,7 +107,8 @@ class Plugin:
         return st
 
     def _save(self) -> None:
-        settings.save(self.settings)
+        # setup_flow writes "setup" from its worker thread; never overwrite it with this copy.
+        settings.save_keeping(self.settings, "setup")
 
     async def _apply_current(self, force_restart: bool = False) -> Optional[Dict[str, Any]]:
         """Apply the resolved preset; restart the unit only when it changes."""
@@ -141,7 +143,7 @@ class Plugin:
             "xmlPresent": bool(asus_fetch.current_xml()),
             "venvOk": await asyncio.to_thread(convert.venv_ok),
             "presets": convert.list_presets(),
-            "inProgress": bool(self.setup_task and not self.setup_task.done()),
+            "inProgress": self._setup_running(),
             "last": self.setup_last,
             "converting": bool(self.convert_task and not self.convert_task.done()),
             "convertLast": self.convert_last,
@@ -155,10 +157,7 @@ class Plugin:
             "dsp": await self._dsp_state(),
             "settings": self.settings,
             "runningApp": {"appId": self.running_app, "resolved": settings.resolve(self.settings, self.running_app)},
-            "update": updater.check(self.settings["update"], decky.DECKY_PLUGIN_VERSION, force=False)
-            if self.settings["update"].get("latest") else {"currentVersion": decky.DECKY_PLUGIN_VERSION,
-                                                              "updateAvailable": False, "latestVersion": None,
-                                                              "error": self.settings["update"].get("error")},
+            "update": self._update_info(),
             "profiles": [{"id": p, "label": l} for p, l in PROFILES],
             "voicings": [{"id": v, "label": VOICING_LABELS[v]} for v in VOICINGS],
         }
@@ -192,10 +191,22 @@ class Plugin:
                       "total": len(setup_flow.STEPS)}
             self.setup_last = ev
             await decky.emit("setup_progress", ev)
+            if ev["status"] == "done":
+                await self._catch_up_after_setup()
             await decky.emit("dsp_state", await self._dsp_state())
 
         self.setup_task = self.loop.create_task(runner())
         return {"started": True}
+
+    async def _catch_up_after_setup(self) -> None:
+        """Setup converts and activates what it read at its start; apply what changed meanwhile."""
+        try:
+            if settings.extras_signature(self.settings["extras"]) != self.settings["setup"].get("extrasSignature"):
+                await self._start_reconvert()
+            else:
+                await self._apply_current()
+        except Exception as e:
+            decky.logger.error("applying settings after setup failed: %s", e)
 
     async def cancel_setup(self) -> Dict[str, Any]:
         self.setup_cancel = True
@@ -268,7 +279,9 @@ class Plugin:
             new["preGainDb"] = settings.clamp_pregain(extras["preGainDb"])
         self.settings["extras"] = new
         self._save()
-        if settings.extras_signature(new) != settings.extras_signature(old):
+        if self._setup_running():
+            pass  # _catch_up_after_setup applies the change
+        elif settings.extras_signature(new) != settings.extras_signature(old):
             await self._start_reconvert()
         elif abs(float(new.get("preGainDb", 0)) - float(old.get("preGainDb", 0))) > 1e-6:
             await self._apply_current()
@@ -288,9 +301,13 @@ class Plugin:
 
         async def runner():
             try:
-                await asyncio.to_thread(convert.convert_all, xml, sink, self.settings["extras"], progress)
-                self.settings["setup"]["extrasSignature"] = settings.extras_signature(self.settings["extras"])
-                self._save()
+                while True:  # extras may change again while a conversion runs
+                    extras = dict(self.settings["extras"])
+                    await asyncio.to_thread(convert.convert_all, xml, sink, extras, progress)
+                    sig = settings.extras_signature(extras)
+                    self.settings["setup"] = settings.update_section("setup", {"extrasSignature": sig})["setup"]
+                    if settings.extras_signature(self.settings["extras"]) == sig:
+                        break
                 self.convert_last = {"percent": 100, "message": "Presets regenerated", "status": "done"}
                 await self._apply_current(force_restart=True)
             except Exception as e:
@@ -302,17 +319,20 @@ class Plugin:
 
     # ---------------------------------------------------------------- updates
     async def check_for_update(self, force: bool = False) -> Dict[str, Any]:
-        res = await asyncio.to_thread(updater.check, self.settings["update"], decky.DECKY_PLUGIN_VERSION, bool(force))
+        state = dict(self.settings["update"])  # the worker thread fills a copy
+        res = await asyncio.to_thread(updater.check, state, decky.DECKY_PLUGIN_VERSION, bool(force))
+        self.settings["update"] = state
         self._save()
         await decky.emit("update_state", res)
         return res
 
-    async def set_update_prefs(self, prefs: Dict[str, Any]) -> Dict[str, Any]:
-        for key in ("autoRestartSteam", "autoCheck"):
-            if key in prefs:
-                self.settings["update"][key] = bool(prefs[key])
-        self._save()
-        return dict(self.settings["update"])
+    def _update_info(self) -> Dict[str, Any]:
+        """Cached update state; a due check runs in the background and reports through update_state."""
+        state = self.settings["update"]
+        if state.get("autoCheck", True) and updater.check_due(state) \
+                and not (self.update_task and not self.update_task.done()):
+            self.update_task = self.loop.create_task(self.check_for_update(False))
+        return updater.check(state, decky.DECKY_PLUGIN_VERSION, fetch=False)
 
     async def prepare_update(self) -> Dict[str, Any]:
         latest = self.settings["update"].get("latest")
@@ -320,9 +340,7 @@ class Plugin:
             latest = await asyncio.to_thread(updater.fetch_latest)
             self.settings["update"]["latest"] = latest
             self._save()
-        info = await asyncio.to_thread(updater.verify_release, latest)
-        updater.mark_update_pending()
-        return info
+        return await asyncio.to_thread(updater.verify_release, latest)
 
     # ---------------------------------------------------------------- diagnostics
     async def get_diagnostics(self) -> Dict[str, Any]:

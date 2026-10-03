@@ -5,6 +5,8 @@ Description=Ally DSP speaker filter chain (Dolby tuning for ASUS ROG Ally handhe
 After=pipewire.service wireplumber.service
 BindsTo=pipewire.service
 ConditionPathExists={conf_path}
+# The LV2 bundle lives in the plugin directory: no start once the plugin is gone.
+ConditionPathExists={lv2_path}
 
 [Service]
 Type=simple

@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import shutil
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from . import confgen, hardware, paths
 from .constants import INPUT_NODE
@@ -14,6 +14,18 @@ from .util import atomic_copy, atomic_write_text, read_json, run, write_json
 ACTIVE_CONF = os.path.join(paths.ACTIVE_DIR, "chain.conf")
 ACTIVE_IRS = os.path.join(paths.ACTIVE_DIR, "ir.irs")
 ACTIVE_META = os.path.join(paths.ACTIVE_DIR, "meta.json")
+
+REMOVAL_UNIT_PREFIX = "ally-dsp-removal"
+REMOVAL_DELAY_S = 60
+# Runs in a transient user unit: $1 plugin dir, $2 unit name, $3 unit file, $4 runtime dir.
+REMOVAL_SCRIPT = """
+[ -e "$1/plugin.json" ] && exit 0
+case "$4" in ""|/) exit 1 ;; esac
+systemctl --user disable --now "$2"
+rm -f -- "$3"
+systemctl --user daemon-reload
+rm -rf -- "$4"
+"""
 
 
 def systemctl(*args: str, timeout: float = 30) -> Any:
@@ -145,3 +157,27 @@ def remove_unit() -> None:
         pass
     systemctl("daemon-reload")
     shutil.rmtree(paths.ACTIVE_DIR, ignore_errors=True)
+
+
+def removal_command(unit: str) -> List[str]:
+    return ["systemd-run", "--user", "--quiet", "--collect", f"--unit={unit}", f"--on-active={REMOVAL_DELAY_S}",
+            "--timer-property=AccuracySec=1s", "--timer-property=RemainAfterElapse=no",
+            "/bin/sh", "-c", REMOVAL_SCRIPT, unit, paths.PLUGIN_DIR, paths.UNIT_NAME, paths.UNIT_PATH, paths.RUNTIME_DIR]
+
+
+def schedule_removal() -> bool:
+    """Remove unit and runtime data REMOVAL_DELAY_S after an uninstall unless the plugin is back.
+
+    Decky calls _uninstall for a real uninstall and while it replaces the plugin during an
+    update; only the plugin directory afterwards tells the two apart. Decky kills the backend
+    5 s after asking it to stop, so the removal runs outside it.
+    """
+    r = run(removal_command(f"{REMOVAL_UNIT_PREFIX}-{int(time.time() * 1000)}"), timeout=3)
+    if not r.ok:
+        logger.error("could not schedule removal: %s", r.err.strip()[:200])
+    return r.ok
+
+
+def cancel_removal() -> None:
+    """A starting backend means the plugin is (re)installed; drop removals still pending."""
+    systemctl("stop", f"{REMOVAL_UNIT_PREFIX}-*.timer", timeout=10)

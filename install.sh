@@ -12,6 +12,11 @@ DECK_USER="${SUDO_USER:-$(logname 2>/dev/null || echo deck)}"
 USER_HOME="$(getent passwd "$DECK_USER" | cut -d: -f6)"; USER_HOME="${USER_HOME:-/home/$DECK_USER}"
 PLUGIN_BASE="$USER_HOME/homebrew/plugins"
 [ -d "$PLUGIN_BASE" ] || { echo "Decky Loader not found at $PLUGIN_BASE. Install it first: https://decky.xyz" >&2; exit 1; }
+DECK_UID="$(id -u "$DECK_USER")"
+user_systemctl() {
+  sudo -u "$DECK_USER" env XDG_RUNTIME_DIR="/run/user/$DECK_UID" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$DECK_UID/bus" \
+    systemctl --user "$@"
+}
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "Looking up the latest release..."
 TAG="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
@@ -35,8 +40,17 @@ if [ -f "$TMP/SHA256SUMS.minisig" ] && [ -f "$TMP/x/$PLUGIN_NAME/minisign.pub" ]
     echo "Release signature INVALID, aborting." >&2; exit 1
   fi
 fi
+DSP_WAS_ACTIVE=0
+if user_systemctl is-active --quiet ally-dsp.service 2>/dev/null; then
+  DSP_WAS_ACTIVE=1
+  echo "Stopping ally-dsp.service while the plugin is replaced..."
+  user_systemctl stop ally-dsp.service 2>/dev/null || true
+fi
 rm -rf "$PLUGIN_BASE/$PLUGIN_NAME"
 mv "$TMP/x/$PLUGIN_NAME" "$PLUGIN_BASE/$PLUGIN_NAME"
 chown -R "$DECK_USER:$DECK_USER" "$PLUGIN_BASE/$PLUGIN_NAME"
+if [ "$DSP_WAS_ACTIVE" = 1 ]; then
+  user_systemctl start ally-dsp.service 2>/dev/null || true
+fi
 systemctl restart plugin_loader 2>/dev/null || true
 echo "Installed $PLUGIN_NAME $VERSION. Open the Quick Access menu, Decky tab, Ally DSP, and run the setup."

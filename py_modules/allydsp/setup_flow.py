@@ -162,18 +162,28 @@ def run_setup(progress: Progress, force: bool = False, use_network: bool = True,
     check_cancel()
 
     # 7 activate
-    st = settings.load()
-    st["setup"].update({"done": True, "xmlSha256": (prov or {}).get("xml_sha256"),
-                        "packageVersion": pkg.get("version"), "converterVersion": convert.converter_version(),
-                        "completedAt": time.strftime("%Y-%m-%dT%H:%M:%S"), "extrasSignature": sig,
-                        "targetSink": sink["name"]})
-    settings.save(st)
+    st = settings.update_section("setup", {"done": True, "xmlSha256": (prov or {}).get("xml_sha256"),
+                                           "packageVersion": pkg.get("version"), "converterVersion": convert.converter_version(),
+                                           "completedAt": time.strftime("%Y-%m-%dT%H:%M:%S"), "extrasSignature": sig,
+                                           "targetSink": sink["name"]})
     if activate:
-        _emit(progress, "activate", "running", "Starting the filter chain")
-        res = settings.resolve(st, None)
-        active = dsp_runtime.apply_preset(res["profile"], res["voicing"], settings.clamp_pregain(extras.get("preGainDb", 0)))
-        dsp_runtime.enable(True)
-        _emit(progress, "activate", "done", f"Active: {res['profile']} / {res['voicing']}" + ("" if active.get("verified") else " (node not verified yet)"))
+        _activate(progress, st, settings.clamp_pregain(extras.get("preGainDb", 0)))
     else:
         _emit(progress, "activate", "skipped", "Not activated")
     return {"ok": True, "codec": codec, "sink": sink, "package": pkg, "provenance": prov, "results": results}
+
+
+def _activate(progress: Progress, st: Dict[str, Any], pregain: float) -> None:
+    """Write the active preset and install the unit; run it and autostart it only as the DSP switch says."""
+    res = settings.resolve(st, None)
+    label = f"{res['profile']} / {res['voicing']}"
+    enabled = bool(st.get("enabled", True))
+    start = enabled and not hardware.headphones_active(hardware.output_route(hardware.pw_dump()))
+    _emit(progress, "activate", "running", "Starting the filter chain" if start else "Preparing the filter chain")
+    active = dsp_runtime.apply_preset(res["profile"], res["voicing"], pregain, start)
+    dsp_runtime.enable(enabled)
+    if start:
+        _emit(progress, "activate", "done", f"Active: {label}" + ("" if active.get("verified") else " (node not verified yet)"))
+    else:
+        dsp_runtime.stop()
+        _emit(progress, "activate", "done", f"Ready: {label} ({'DSP is off' if not enabled else 'paused while headphones are in use'})")

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 from typing import Any, Dict, Optional
 
 from . import paths
@@ -15,11 +16,14 @@ DEFAULTS: Dict[str, Any] = {
     "global": {"profile": DEFAULT_PROFILE, "voicing": DEFAULT_VOICING},
     "perApp": {},
     "extras": {"autogain": True, "dialog": True, "regulator": True, "virtualBass": False, "preGainDb": 0.0},
-    "update": {"channel": "stable", "lastCheck": 0, "latest": None, "autoCheck": True, "autoRestartSteam": True},
+    "update": {"channel": "stable", "lastCheck": 0, "lastAttempt": 0, "latest": None, "autoCheck": True},
     "setup": {"done": False, "xmlSha256": None, "packageVersion": None, "converterVersion": None,
               "completedAt": None, "extrasSignature": None, "targetSink": None},
 }
 RECONVERT_KEYS = ("autogain", "dialog", "regulator", "virtualBass")
+
+# setup_flow writes the "setup" section from a worker thread while the backend saves the rest.
+_lock = threading.Lock()
 
 
 def _merge(defaults: Any, data: Any) -> Any:
@@ -41,6 +45,24 @@ def load() -> Dict[str, Any]:
 
 def save(s: Dict[str, Any]) -> None:
     write_json(paths.SETTINGS_FILE, s)
+
+
+def update_section(section: str, values: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge `values` into one section of the file on disk; returns the whole file."""
+    with _lock:
+        s = load()
+        s[section].update(values)
+        save(s)
+        return s
+
+
+def save_keeping(s: Dict[str, Any], section: str) -> None:
+    """Save `s` but keep `section` as it is on disk (copied into `s`); update_section writes it."""
+    with _lock:
+        disk = read_json(paths.SETTINGS_FILE)
+        if isinstance(disk, dict) and isinstance(disk.get(section), dict):
+            s[section] = _merge(DEFAULTS[section], disk[section])
+        save(s)
 
 
 def valid_profile(p: Any) -> bool:

@@ -20,9 +20,7 @@ import {
   setExtras,
   setGlobal,
   setPerApp,
-  setUpdatePrefs,
 } from "../backend";
-import { armRestartAfterInstall, restartSteam } from "../updateFlow";
 import { usePluginState } from "../hooks/usePluginState";
 import { setupIntent } from "../setupIntent";
 import { t } from "../strings";
@@ -45,15 +43,33 @@ function labelOf(list: { id: string; label: string }[], id: string): string {
   return list.find((x) => x.id === id)?.label ?? id;
 }
 
+let reopenTried = false;
+
+/** After an update Decky has loaded the new bundle but keeps showing this old panel; select the plugin again. */
+function reopenWithNewUi(): void {
+  if (reopenTried) return;
+  reopenTried = true;
+  try {
+    window.DeckyPluginLoader?.deckyState?.setActivePlugin?.(t.title);
+  } catch {
+    /* the stale-UI row stays as a hint */
+  }
+}
+
 export function QuickAccess() {
   const { state, error, refresh } = usePluginState();
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<number | null>(null);
   const gainTimer = useRef<number | null>(null);
+  const stale = !!state && state.version !== FRONTEND_VERSION;
 
   useEffect(() => () => {
     if (gainTimer.current) window.clearTimeout(gainTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (stale) reopenWithNewUi();
+  }, [stale]);
 
   if (error) {
     return (
@@ -111,7 +127,6 @@ export function QuickAccess() {
   const onInstallUpdate = () =>
     run(async () => {
       const artifact = await prepareUpdate();
-      armRestartAfterInstall(artifact.version, s.settings.update.autoRestartSteam !== false);
       await installViaDecky(artifact);
     });
 
@@ -121,11 +136,9 @@ export function QuickAccess() {
         <PanelSectionRow>
           <Field label={statusText(s)} description={`${activeLabel}${resolved.source === "app" ? ` · ${t.thisGame}` : ""}`} />
         </PanelSectionRow>
-        {s.version !== FRONTEND_VERSION && (
+        {stale && (
           <PanelSectionRow>
-            <ButtonItem layout="below" label={t.staleUi} description={`UI ${FRONTEND_VERSION}, backend ${s.version}`} onClick={() => restartSteam()}>
-              {t.restartSteam}
-            </ButtonItem>
+            <Field label={t.staleUi} description={`UI ${FRONTEND_VERSION}, backend ${s.version}`} />
           </PanelSectionRow>
         )}
         {!s.setup.done && (
@@ -205,26 +218,26 @@ export function QuickAccess() {
               </PanelSectionRow>
             )}
             <PanelSectionRow>
-              <ToggleField label={t.autogain} description={t.autogainDesc} checked={s.settings.extras.autogain} disabled={busy || s.setup.converting}
+              <ToggleField label={t.autogain} description={t.autogainDesc} checked={s.settings.extras.autogain} disabled={busy || s.setup.converting || s.setup.inProgress}
                 onChange={(v) => void run(() => setExtras({ autogain: v }))} />
             </PanelSectionRow>
             <PanelSectionRow>
-              <ToggleField label={t.dialog} checked={s.settings.extras.dialog} disabled={busy || s.setup.converting}
+              <ToggleField label={t.dialog} checked={s.settings.extras.dialog} disabled={busy || s.setup.converting || s.setup.inProgress}
                 onChange={(v) => void run(() => setExtras({ dialog: v }))} />
             </PanelSectionRow>
             <PanelSectionRow>
-              <ToggleField label={t.regulator} description={t.regulatorDesc} checked={s.settings.extras.regulator} disabled={busy || s.setup.converting}
+              <ToggleField label={t.regulator} description={t.regulatorDesc} checked={s.settings.extras.regulator} disabled={busy || s.setup.converting || s.setup.inProgress}
                 onChange={(v) => void run(() => setExtras({ regulator: v }))} />
             </PanelSectionRow>
             {s.hardware.lv2?.calf && (
               <PanelSectionRow>
-                <ToggleField label={t.virtualBass} checked={s.settings.extras.virtualBass} disabled={busy || s.setup.converting}
+                <ToggleField label={t.virtualBass} checked={s.settings.extras.virtualBass} disabled={busy || s.setup.converting || s.setup.inProgress}
                   onChange={(v) => void run(() => setExtras({ virtualBass: v }))} />
               </PanelSectionRow>
             )}
             <PanelSectionRow>
               <SliderField label={t.preGain} value={pending ?? s.settings.extras.preGainDb} min={-6} max={6} step={1} showValue valueSuffix=" dB"
-                notchCount={13} disabled={busy} onChange={onGain} />
+                notchCount={13} disabled={busy || s.setup.inProgress} onChange={onGain} />
             </PanelSectionRow>
           </PanelSection>
         </>
@@ -246,10 +259,6 @@ export function QuickAccess() {
             </ButtonItem>
           </PanelSectionRow>
         )}
-        <PanelSectionRow>
-          <ToggleField label={t.autoRestart} description={t.autoRestartDesc} checked={s.settings.update.autoRestartSteam !== false} disabled={busy}
-            onChange={(v) => void run(() => setUpdatePrefs({ autoRestartSteam: v }))} />
-        </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={() => goto("/ally-dsp/diagnostics")}>{t.diagnostics}</ButtonItem>
         </PanelSectionRow>

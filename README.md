@@ -19,8 +19,7 @@ keep working, headphones pause the chain.
 - Extras: Dolby volume leveler (on by default), dialog enhancer, regulator, pre-gain.
 - Headphone detection on the shared 3.5 mm jack pauses the chain.
 - Diagnostics page and text report.
-- Signed updates from GitHub Releases, installed through Decky Loader; Steam
-  restarts automatically afterwards so the new interface loads (optional).
+- Signed updates from GitHub Releases, installed through Decky Loader.
 - No root; nothing is written outside the home directory.
 
 ## Supported hardware

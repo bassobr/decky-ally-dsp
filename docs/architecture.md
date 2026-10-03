@@ -57,13 +57,16 @@ ally-dsp.service: /usr/bin/pipewire -c ~/homebrew/data/Ally DSP/active/chain.con
    unit, verify the node in `pw-dump`, enable autostart.
 
 Steps 3–4 and 6 are skipped when provenance and preset metadata already match.
+Setup converts and activates with the settings it read at its start; when it
+finishes, the backend reconverts if the extras changed meanwhile, otherwise it
+applies the resolved preset (per-game preset, pre-gain).
 
 ## Runtime
 
 - Preset switch: copy `chain.conf` and `ir.irs` to `active/`, apply pre-gain to
   the limiter input gain, `systemctl --user restart ally-dsp.service`, verify.
-- The unit has `ConditionPathExists` on the active config, `BindsTo=pipewire.service`
-  and `Restart=on-failure`.
+- The unit has `ConditionPathExists` on the active config and the LV2 bundle,
+  `BindsTo=pipewire.service` and `Restart=on-failure`.
 - Per-game presets: the frontend reports the running app id; the backend
   resolves `perApp[appId]` or the global preset and restarts only on change.
 - Headphones: `jackwatch` polls the active output route every 3 s and stops the
@@ -80,7 +83,7 @@ Steps 3–4 and 6 are skipped when provenance and preset metadata already match.
   "global": {"profile": "game", "voicing": "balanced"},
   "perApp": {"1245620": {"profile": "movie", "voicing": "warm", "enabled": true, "name": "Elden Ring"}},
   "extras": {"autogain": true, "dialog": true, "regulator": true, "virtualBass": false, "preGainDb": 0.0},
-  "update": {"channel": "stable", "lastCheck": 0, "latest": null, "autoCheck": true},
+  "update": {"channel": "stable", "lastCheck": 0, "lastAttempt": 0, "latest": null, "autoCheck": true},
   "setup": {"done": true, "xmlSha256": "…", "packageVersion": "V11.130.1340.46", "converterVersion": "bde5653",
             "completedAt": "…", "extrasSignature": "…", "targetSink": "alsa_output.pci-0000_64_00.6.analog-stereo"}
 }
@@ -88,22 +91,30 @@ Steps 3–4 and 6 are skipped when provenance and preset metadata already match.
 
 ## Updates
 
-1. `updater.check` reads `releases/latest` (cached for six hours).
+1. `updater.check` reads `releases/latest` (cached for six hours). `get_state`
+   only reads the cache; a due check runs in the background and reports
+   through `update_state`, and a failed one is retried after 30 minutes.
 2. `updater.verify_release` downloads `SHA256SUMS` and `SHA256SUMS.minisig`,
    verifies the signature with the pinned `minisign.pub` and returns the zip URL
    and its SHA-256.
 3. The frontend calls Decky's `utilities/install_plugin` with that data; Decky
    confirms with the user, downloads, checks the hash, replaces the plugin and
-   reloads it. Decky calls `_uninstall` while replacing the plugin, so
-   `prepare_update` writes `data/.update-pending` and `_uninstall` leaves unit and
-   runtime data alone while that marker is fresh. `_startup` re-creates the unit
-   and active preset, or re-runs setup when data is missing. Steam keeps the old UI
-   bundle until it restarts, so the frontend restarts Steam
-   (`SteamClient.User.StartRestart(false)`) when Decky reports
-   `loader/plugin_download_finish` for the plugin or the new backend emits
-   `update_installed` on its first start; the Maintenance toggle
-   `autoRestartSteam` (default on) controls this, and a stale-UI row offers a
-   manual restart.
+   reloads it. `_startup` re-creates the unit and active preset, or re-runs
+   setup when data is missing.
+4. Decky imports the new frontend bundle right away, but its `DeckyState` keeps
+   the old plugin object as the active one (`setPlugins` does not re-resolve
+   it), so the open Quick Access panel still shows the old UI. That panel sees
+   the version mismatch and selects the plugin again
+   (`DeckyPluginLoader.deckyState.setActivePlugin`, a Decky internal); if that
+   does not work, it asks the user to press B and reopen the plugin.
+
+Uninstall: Decky calls `_uninstall` both for a real uninstall and while it
+replaces the plugin during an update, and kills the backend 5 s after asking it
+to stop. `_uninstall` therefore only starts a transient user unit
+(`systemd-run --on-active=60`) that disables the unit and deletes it and the
+runtime data if `plugin.json` is gone by then. A starting backend cancels
+pending removals. The unit's `ConditionPathExists` on the LV2 bundle keeps it
+from starting once the plugin directory is gone.
 
 First install: `install.sh` (sudo) downloads the latest release, verifies
 `SHA256SUMS` and the signature, installs into `~/homebrew/plugins/Ally DSP` and
@@ -122,7 +133,10 @@ the `package.json` version.
 
 - Decky runs plugin backends in its bundled Python 3.11 (PyInstaller). It lacks
   `xml.etree` and may lack other stdlib modules; the backend only uses `re`,
-  `json`, `os`, `subprocess`, `shutil`, `hashlib`, `base64`, `time`, `asyncio`.
+  `json`, `os`, `subprocess`, `shutil`, `hashlib`, `base64`, `time`, `asyncio`,
+  `threading`.
+- Settings: the backend saves everything except `setup`, which `setup_flow`
+  writes from its worker thread; both go through `settings` under one lock.
 - Backends do not inherit `XDG_RUNTIME_DIR` or the session bus address;
   `util.user_env` sets them from the uid.
 - The CLI (`python3 -m allydsp.cli`) uses the system Python and the same paths.
@@ -133,3 +147,5 @@ the `package.json` version.
 - End-to-end test of the in-app update with a second release.
 - Optional pre-release channel via GitHub pre-releases.
 - Upstream: a `hardware-profile` for the RC73XA in Bazzite or `steamdeck-dsp`.
+- Upstream (Decky): `DeckyState.setPlugins` could re-resolve `_activePlugin` by
+  name, so every plugin shows its new UI after an update.

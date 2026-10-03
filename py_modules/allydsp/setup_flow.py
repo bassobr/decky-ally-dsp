@@ -124,12 +124,10 @@ def run_setup(progress: Progress, force: bool = False, use_network: bool = True,
     check_cancel()
 
     # 7 activate
-    st = settings.load()
-    st["setup"].update({"done": True, "xmlSha256": (prov or {}).get("xml_sha256"),
-                        "packageVersion": pkg.get("version"), "converterVersion": convert.converter_version(),
-                        "completedAt": time.strftime("%Y-%m-%dT%H:%M:%S"), "extrasSignature": sig,
-                        "targetSink": sink["name"]})
-    settings.save(st)
+    st = settings.update_section("setup", {"done": True, "xmlSha256": (prov or {}).get("xml_sha256"),
+                                           "packageVersion": pkg.get("version"), "converterVersion": convert.converter_version(),
+                                           "completedAt": time.strftime("%Y-%m-%dT%H:%M:%S"), "extrasSignature": sig,
+                                           "targetSink": sink["name"]})
     if activate:
         _emit(progress, "activate", "running", "Starting the filter chain")
         res = settings.resolve(st, None)

@@ -52,11 +52,7 @@ export const t = {
   unsupported: "This device is not supported",
   forceUnsupported: "Try anyway",
   version: "Version",
-  staleUi: "Interface is from an older version. Restart Steam to load the updated UI.",
-  autoRestart: "Restart Steam after updates",
-  autoRestartDesc: "Restarts the Steam client right after an update so the new interface loads.",
-  restartingSteam: "Update installed, restarting Steam…",
-  restartSteam: "Restart Steam",
+  staleUi: "Interface is from an older version. Press B and open Ally DSP again to load the new one.",
 };
 
 export const STEP_LABELS: Record<string, string> = {

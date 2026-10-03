@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.6 (2026-10-03)
+
+- No Steam restart after an in-app update: Decky already loads the new UI, and
+  the panel now switches to it by itself (otherwise it asks to press B and
+  reopen Ally DSP). The "Restart Steam after updates" toggle is gone. Updating
+  from 0.1.4 with that toggle on still restarts Steam once, because 0.1.4's
+  code handles that update.
+- Uninstall cleanup no longer relies on a 15-minute update marker: the unit and
+  runtime data are removed a minute after Decky's `_uninstall` only if the
+  plugin is really gone. Fixes data loss when Decky's update prompt was
+  confirmed after more than 15 minutes or two prompts were confirmed in a row.
+- Saving a setting while setup runs no longer overwrites the finished setup.
+- Update checks no longer block the backend: the panel shows the cached result
+  and a due check runs in the background; after a failed check the next try
+  waits 30 minutes instead of running on every refresh.
+- Extras and pre-gain are locked while setup runs; changes that still arrive
+  are applied when it finishes, as is the running game's own preset. A
+  reconversion repeats until the presets match the current extras.
+
 ## 0.1.4 (2026-09-20)
 
 - Restart Steam automatically after an in-app update so the new UI loads

@@ -8,35 +8,19 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from . import paths
-from .constants import GITHUB_REPO, PLUGIN_NAME, RELEASE_ZIP_TEMPLATE, UPDATE_CHECK_INTERVAL_S, USER_AGENT
+from .constants import GITHUB_REPO, PLUGIN_NAME, RELEASE_ZIP_TEMPLATE, UPDATE_CHECK_INTERVAL_S, UPDATE_RETRY_S, USER_AGENT
 from .log import logger
 from .minisign import verify_file
 from .util import run
 
 
-UPDATE_MARKER = os.path.join(paths.RUNTIME_DIR, ".update-pending")
-UPDATE_MARKER_TTL_S = 15 * 60
+# Written by 0.1.2–0.1.4 before an in-app update; dsp_runtime.schedule_removal replaced it.
+LEGACY_UPDATE_MARKER = os.path.join(paths.RUNTIME_DIR, ".update-pending")
 
 
-def mark_update_pending() -> None:
-    """Written before handing the release to Decky; _uninstall then keeps the data."""
-    os.makedirs(paths.RUNTIME_DIR, exist_ok=True)
-    with open(UPDATE_MARKER, "w", encoding="utf-8") as f:
-        f.write(str(int(time.time())))
-
-
-def update_in_progress(now: Optional[float] = None) -> bool:
+def remove_legacy_marker() -> None:
     try:
-        with open(UPDATE_MARKER, "r", encoding="utf-8") as f:
-            stamp = int(f.read().strip() or 0)
-    except (OSError, ValueError):
-        return False
-    return 0 <= (now or time.time()) - stamp < UPDATE_MARKER_TTL_S
-
-
-def clear_update_marker() -> None:
-    try:
-        os.unlink(UPDATE_MARKER)
+        os.unlink(LEGACY_UPDATE_MARKER)
     except OSError:
         pass
 
@@ -69,21 +53,27 @@ def fetch_latest(repo: str = GITHUB_REPO) -> Dict[str, Any]:
             "published_at": data.get("published_at"), "prerelease": bool(data.get("prerelease"))}
 
 
-def check(state: Dict[str, Any], current_version: str, force: bool = False) -> Dict[str, Any]:
-    """`state` is settings['update']; mutated in place with lastCheck/latest."""
+def check_due(state: Dict[str, Any], now: Optional[float] = None) -> bool:
+    """The cache is older than the check interval and the last attempt older than the retry delay."""
+    now = time.time() if now is None else now
+    stale = not state.get("latest") or now - int(state.get("lastCheck") or 0) >= UPDATE_CHECK_INTERVAL_S
+    return stale and now - int(state.get("lastAttempt") or 0) >= UPDATE_RETRY_S
+
+
+def check(state: Dict[str, Any], current_version: str, force: bool = False, fetch: bool = True) -> Dict[str, Any]:
+    """`state` is settings['update']; mutated in place. fetch=False only reads the cache."""
     now = int(time.time())
-    if not force and state.get("latest") and now - int(state.get("lastCheck") or 0) < UPDATE_CHECK_INTERVAL_S:
-        latest = state["latest"]
-    else:
+    fresh = state.get("latest") and now - int(state.get("lastCheck") or 0) < UPDATE_CHECK_INTERVAL_S
+    if fetch and (force or not fresh):
+        state["lastAttempt"] = now
         try:
-            latest = fetch_latest()
-            state["latest"] = latest
+            state["latest"] = fetch_latest()
             state["lastCheck"] = now
             state["error"] = None
         except Exception as e:
             logger.warning("update check failed: %s", e)
             state["error"] = str(e)
-            latest = state.get("latest")
+    latest = state.get("latest")
     result = {"currentVersion": current_version, "latestVersion": None, "updateAvailable": False,
               "releaseUrl": None, "checkedAt": state.get("lastCheck"), "error": state.get("error")}
     if latest:

@@ -5,6 +5,7 @@ import { cancelSetup, getSetupProgress, getState, runSetup } from "../backend";
 import { setupIntent } from "../setupIntent";
 import { STEP_LABELS, t } from "../strings";
 import type { PluginState, SetupProgress } from "../types";
+import { Page, ScrollArea } from "./Page";
 
 const STEPS = ["hardware", "resolve", "download", "extract", "venv", "convert", "activate"];
 
@@ -55,8 +56,9 @@ export function SetupPage() {
     }
   };
 
+  // Controls first: on the handheld the lower part of the page can sit behind Steam's footer.
   return (
-    <Focusable style={{ marginTop: "40px", padding: "0 28px 20px", color: "#fff", maxWidth: "900px" }} flow-children="vertical">
+    <Page>
       <h2 style={{ marginBottom: "6px" }}>{t.setupTitle}</h2>
       <p style={{ opacity: 0.85, lineHeight: 1.4 }}>{t.setupIntro}</p>
       {codec && (
@@ -71,26 +73,27 @@ export function SetupPage() {
       {state?.setup.done && (
         <ToggleField label={t.rerunSetup} description="force" checked={force} onChange={setForce} disabled={running} />
       )}
-      <div style={{ margin: "12px 0" }}>
-        {STEPS.map((step) => (
-          <div key={step} style={{ display: "flex", gap: "10px", padding: "3px 0", opacity: progress && STEPS.indexOf(step) > progress.index ? 0.55 : 1 }}>
-            <span style={{ width: "18px", display: "inline-block" }}>{stepMark(step, progress)}</span>
-            <span style={{ flex: 1 }}>{STEP_LABELS[step] ?? step}</span>
-            {progress && (progress.step === step || (progress.step === "finished" && step === "activate")) && (
-              <span style={{ opacity: 0.8, maxWidth: "60%", textAlign: "right" }}>{progress.message}</span>
-            )}
-          </div>
-        ))}
-      </div>
-      <ProgressBarWithInfo nProgress={progress?.percent ?? 0} indeterminate={false} sOperationText={progress?.message ?? ""} layout="below" bottomSeparator="none" />
-      {failed && <p style={{ color: "#ff8a80" }}>{progress?.message}</p>}
-      <Focusable style={{ display: "flex", gap: "12px", marginTop: "14px" }} flow-children="horizontal">
+      <Focusable style={{ display: "flex", gap: "12px", margin: "12px 0" }} flow-children="horizontal">
         <DialogButton onClick={() => void start()} disabled={running || starting || (unsupported && !allowUnsupported) || !codec}>
           {finished ? t.rerunSetup : t.start}
         </DialogButton>
         <DialogButton onClick={() => void cancelSetup()} disabled={!running}>{t.cancel}</DialogButton>
         <DialogButton onClick={() => Navigation.NavigateBack()}>{finished ? t.done : t.back}</DialogButton>
       </Focusable>
-    </Focusable>
+      <ProgressBarWithInfo nProgress={progress?.percent ?? 0} indeterminate={false} sOperationText={progress?.message ?? ""} layout="below" bottomSeparator="none" />
+      {failed && <p style={{ color: "#ff8a80" }}>{progress?.message}</p>}
+      {/* Two columns so the list fits above the footer; the progress bar shows the current message. */}
+      <ScrollArea style={{ marginTop: "8px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "repeat(4, auto)", gridAutoFlow: "column",
+          columnGap: "24px", lineHeight: 1.25 }}>
+          {STEPS.map((step) => (
+            <div key={step} style={{ display: "flex", gap: "10px", padding: "1px 0", opacity: progress && STEPS.indexOf(step) > progress.index ? 0.55 : 1 }}>
+              <span style={{ width: "18px", display: "inline-block" }}>{stepMark(step, progress)}</span>
+              <span>{STEP_LABELS[step] ?? step}</span>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </Page>
   );
 }

@@ -1,6 +1,6 @@
 {
   "name": "ally-dsp",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Decky plugin: Dolby speaker tuning for ASUS ROG Ally handhelds on SteamOS",
   "type": "module",
   "packageManager": "pnpm@11.20.0",

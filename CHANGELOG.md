@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10 (2026-10-03)
+
+- Setup and diagnostics pages fit the handheld screen: the setup controls come
+  first and the steps sit in two columns above Steam's footer; the diagnostics
+  report scrolls with the D-pad block by block.
+- Update the converter (speaker-tuning-to-easyeffects) to 628d041 (Dependabot).
+  The generated presets are unchanged.
+
 ## 0.1.9 (2026-10-03)
 
 - Support the ROG Ally X (2024, RC72LA, codec subsystem 1043:1EB3) with its own

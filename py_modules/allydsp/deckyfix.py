@@ -3,7 +3,8 @@
 To stop a plugin Decky sends SIGTERM and then closes its end of the plugin socket. In the
 plugin process, localsocket.UnixSocket._listen_for_method_call then gets an empty line
 from _read_single_line at EOF in a loop that never yields, so the event loop never runs
-the shutdown (_unload, _uninstall) and Decky kills the process 5 s later (Decky v3.2.9).
+the shutdown (_unload, _uninstall) and Decky kills the process 5 s later
+(Decky v3.2.9 and v3.2.10-pre1; reported as SteamDeckHomebrew/decky-loader#975).
 Letting the read wait forever once the reader is at EOF stops the spin.
 """
 from __future__ import annotations

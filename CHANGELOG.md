@@ -1,9 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.9 (2026-10-03)
 
 - Support the ROG Ally X (2024, RC72LA, codec subsystem 1043:1EB3) with its own
-  ASUS package (Dolby Atmos driver V9.816.706.24).
+  ASUS package (Dolby Atmos driver V9.816.706.24) (#7 by @gmartsenkov).
 - Per-device package registry in `defaults/fallback-sources.json`: display name,
   ASUS API query and pinned fallback package per lowercase codec subsystem id.
 - Compare codec subsystem ids in lowercase everywhere.

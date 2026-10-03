@@ -142,6 +142,12 @@ the `package.json` version.
   writes from its worker thread; both go through `settings` under one lock.
 - Backends do not inherit `XDG_RUNTIME_DIR` or the session bus address;
   `util.user_env` sets them from the uid.
+- Decky v3.2.9 stops a plugin with SIGTERM and then closes its socket; the
+  plugin side (`UnixSocket._listen_for_method_call`) then reads empty lines at
+  EOF in a loop that never yields, so the shutdown never runs and Decky kills
+  the backend after 5 s. `deckyfix` makes that read wait at EOF, and `_unload`
+  and `_uninstall` do not await, so the stop also works without the patch
+  most of the time.
 - The CLI (`python3 -m allydsp.cli`) uses the system Python and the same paths.
 
 ## Open items
@@ -152,3 +158,5 @@ the `package.json` version.
 - Upstream: a `hardware-profile` for the RC73XA in Bazzite or `steamdeck-dsp`.
 - Upstream (Decky): `DeckyState.setPlugins` could re-resolve `_activePlugin` by
   name, so every plugin shows its new UI after an update.
+- Upstream (Decky): `UnixSocket._listen_for_method_call` should stop at EOF
+  instead of spinning; then `deckyfix` can go.

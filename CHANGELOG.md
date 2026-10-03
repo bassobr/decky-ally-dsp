@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 (2026-10-03)
+
+- The backend shuts down cleanly when Decky stops it. With Decky v3.2.9 the
+  plugin's socket loop spins once Decky closes its end of the connection, so
+  the backend was killed after 5 s and `_uninstall` often never ran, which left
+  the unit and runtime data behind after an uninstall. The backend now makes
+  that read wait, and its unload and uninstall hooks no longer await anything.
+
 ## 0.1.7 (2026-10-03)
 
 - Running setup no longer switches the DSP on: it starts the chain only when

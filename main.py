@@ -10,7 +10,7 @@ import decky  # type: ignore
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "py_modules"))
 
-from allydsp import asus_fetch, convert, diagnostics, dsp_runtime, hardware, paths, settings, setup_flow, updater  # noqa: E402
+from allydsp import asus_fetch, convert, deckyfix, diagnostics, dsp_runtime, hardware, paths, settings, setup_flow, updater  # noqa: E402
 from allydsp.constants import PROFILES, VOICING_LABELS, VOICINGS  # noqa: E402
 from allydsp.jackwatch import JackWatcher  # noqa: E402
 
@@ -18,6 +18,8 @@ from allydsp.jackwatch import JackWatcher  # noqa: E402
 class Plugin:
     # ---------------------------------------------------------------- lifecycle
     async def _main(self):
+        if not deckyfix.park_reader_at_eof():
+            decky.logger.warning("Decky socket workaround not applied; stopping may take 5 s")
         self.loop = asyncio.get_event_loop()
         paths.ensure_dirs()
         self.settings: Dict[str, Any] = settings.load()
@@ -34,20 +36,19 @@ class Plugin:
         self.loop.create_task(self._startup())
         decky.logger.info("Ally DSP backend started (plugin dir %s)", paths.PLUGIN_DIR)
 
+    # _unload and _uninstall do not await: if deckyfix could not stop Decky's socket loop from
+    # spinning, the event loop never runs again once the stop begins.
     async def _unload(self):
-        tasks = [t for t in (getattr(self.jack, "_task", None), self.setup_task, self.convert_task, self.update_task)
-                 if t and not t.done()]
-        for t in tasks:
-            t.cancel()
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
+        for t in (getattr(self.jack, "_task", None), self.setup_task, self.convert_task, self.update_task):
+            if t and not t.done():
+                t.cancel()
         decky.logger.info("Ally DSP backend unloaded (filter chain keeps running)")
 
     async def _uninstall(self):
         # Decky also calls this while replacing the plugin during an update, so the unit and
         # runtime data are only removed if the plugin is still gone a minute later.
         try:
-            if await asyncio.to_thread(dsp_runtime.schedule_removal):
+            if dsp_runtime.schedule_removal():
                 decky.logger.info("uninstall: unit and runtime data go in %ss unless the plugin comes back",
                                   dsp_runtime.REMOVAL_DELAY_S)
         except Exception as e:

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.7 (2026-10-03)
+
+- Running setup no longer switches the DSP on: it starts the chain only when
+  the DSP is switched on and no headphones are in use, and autostart follows
+  the switch.
+- Switching the DSP on or changing presets while headphones are in use no
+  longer starts the chain; it starts once the headphones are unplugged.
+- install.sh stops ally-dsp.service while it replaces the plugin and starts it
+  again afterwards (#8 by @gmartsenkov).
+- Update rollup to 4.63.4 (Dependabot).
+
 ## 0.1.6 (2026-10-03)
 
 - No Steam restart after an in-app update: Decky already loads the new UI, and

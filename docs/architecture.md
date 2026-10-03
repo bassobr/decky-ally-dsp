@@ -53,8 +53,9 @@ ally-dsp.service: /usr/bin/pipewire -c ~/homebrew/data/Ally DSP/active/chain.con
    with `LV2_PATH` set, then `confgen.finalize` rewrites the drop-in into a
    standalone config: base modules, fixed node names (`effect_input.ally_dsp`,
    `effect_output.ally_dsp`), smart-filter name and target, IR path.
-7. `activate`: write the resolved preset to `active/`, install and start the
-   unit, verify the node in `pw-dump`, enable autostart.
+7. `activate`: write the resolved preset to `active/` and install the unit;
+   start it and verify the node in `pw-dump` only when the DSP is switched on
+   and no headphones are in use. Autostart follows the DSP switch.
 
 Steps 3–4 and 6 are skipped when provenance and preset metadata already match.
 Setup converts and activates with the settings it read at its start; when it
@@ -70,7 +71,9 @@ applies the resolved preset (per-game preset, pre-gain).
 - Per-game presets: the frontend reports the running app id; the backend
   resolves `perApp[appId]` or the global preset and restarts only on change.
 - Headphones: `jackwatch` polls the active output route every 3 s and stops the
-  unit while `analog-output-headphones` is active.
+  unit while `analog-output-headphones` is active; nothing starts the chain
+  meanwhile. When the headphones are unplugged it starts the unit if the DSP is
+  switched on, also when it was switched on during headphone use.
 - Extras: leveler, dialog and regulator switches trigger a reconversion of all
   presets; pre-gain only re-applies the active preset. Virtual bass is offered
   only when Calf LV2 is installed system-wide.
